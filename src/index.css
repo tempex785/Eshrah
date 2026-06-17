@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Cairo", ui-sans-serif, system-ui, sans-serif;
+  
+  --color-primary-500: #8b5cf6;
+  --color-primary-600: #7c3aed;
+  --color-success-500: #10b981;
+  --color-warning-500: #f59e0b;
+  --color-info-500: #3b82f6;
+
+  --color-bg-main: var(--bg-main);
+  --color-bg-card: var(--bg-card);
+  --color-bg-sidebar: var(--bg-sidebar);
+  --color-bg-hover: var(--bg-hover);
+  --color-bg-track: var(--bg-track);
+  
+  --color-text-title: var(--text-title);
+  --color-text-body: var(--text-body);
+  --color-text-muted: var(--text-muted);
+  
+  --color-border-card: var(--border-card);
+  --color-divide-card: var(--divide-card);
+  --color-hover-table: var(--hover-table);
+}
+
+:root {
+  --bg-main: #f1f5f9;
+  --bg-card: #ffffff;
+  --bg-sidebar: #ffffff;
+  --bg-hover: #f8fafc;
+  --bg-track: #e2e8f0;
+  
+  --text-title: #0f172a;
+  --text-body: #334155;
+  --text-muted: #64748b;
+  
+  --border-card: #e2e8f0;
+  --divide-card: #e2e8f0;
+  --hover-table: #f8fafc;
+}
+
+.dark {
+  --bg-main: #0B0A1A;
+  --bg-card: #15132A;
+  --bg-sidebar: #0E0C22;
+  --bg-hover: #1E1B3A;
+  --bg-track: #1e293b;
+  
+  --text-title: #ffffff;
+  --text-body: #cbd5e1;
+  --text-muted: #94a3b8;
+  
+  --border-card: rgba(255, 255, 255, 0.05); /* white/5 */
+  --divide-card: rgba(255, 255, 255, 0.05); /* white/5 */
+  --hover-table: rgba(255, 255, 255, 0.02); /* white/[0.02] */
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-title);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
