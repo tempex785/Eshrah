@@ -1,18 +1,31 @@
 import { Star } from "lucide-react";
 import { cn } from "../lib/utils";
-
-const courses = [
-  { id: 1, title: "دورة البرمجة للمبتدئين", students: 234, rating: 4.9 },
-  { id: 2, title: "دورة التصوير الفوتوغرافي", students: 203, rating: 4.5 },
-  { id: 3, title: "دورة التسويق الرقمي", students: 189, rating: 4.7 },
-  { id: 4, title: "دورة تحليل البيانات", students: 167, rating: 4.7 },
-  { id: 5, title: "دورة تصميم الجرافيك", students: 156, rating: 4.8 },
-];
+import { useState, useEffect } from "react";
+import { supabase } from "../lib/supabase";
 
 export function PopularCourses() {
+  const [courses, setCourses] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function fetchPopularCourses() {
+      const { data, error } = await supabase
+        .from('courses')
+        .select('*')
+        .order('rating', { ascending: false })
+        .order('students', { ascending: false })
+        .limit(5);
+
+      if (!error && data) {
+        setCourses(data);
+      }
+    }
+
+    fetchPopularCourses();
+  }, []);
+
   return (
     <div className="bg-bg-card rounded-3xl p-6 border border-border-card h-full">
-      <h3 className="text-xl font-bold text-text-title mb-6">الدورات الأكثر شعبية</h3>
+      <h3 className="text-xl font-bold text-text-title mb-6">أفضل الدورات</h3>
       
       <div className="space-y-4">
         {courses.map((course, index) => (
@@ -32,11 +45,12 @@ export function PopularCourses() {
               "w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-bold shadow-md shrink-0 text-sm sm:text-base",
               index === 0 || index === 2 ? "bg-warning-500 text-text-title" : "bg-slate-700 text-text-body"
             )}>
-              {course.id}
+              {index + 1}
             </div>
 
           </div>
         ))}
+        {courses.length === 0 && <p className="text-text-muted text-center text-sm">جاري التحميل...</p>}
       </div>
     </div>
   );

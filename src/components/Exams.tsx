@@ -46,20 +46,34 @@ const fallbackExamsData = [
 export function Exams() {
   const [exams, setExams] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState({ total: 0, passed: 0, failed: 0, avgScore: "0%" });
 
   useEffect(() => {
     async function fetchExams() {
       try {
         const { data, error } = await supabase.from('exams').select('*');
         if (error) throw error;
-        if (data && data.length > 0) {
+        if (data) {
           setExams(data);
-        } else {
-          setExams(fallbackExamsData);
+          
+          const total = data.length;
+          const passed = data.filter(e => e.status === 'ناجح' || e.status === 'اجتاز').length;
+          const failed = total - passed;
+          let avgScore = 0;
+          
+          if (total > 0) {
+             avgScore = Math.round(data.reduce((acc, curr) => acc + (curr.score || 0), 0) / total);
+          }
+          
+          setStats({
+            total,
+            passed,
+            failed,
+            avgScore: `${avgScore}%`
+          });
         }
       } catch (err) {
         console.error("Error fetching exams:", err);
-        setExams(fallbackExamsData);
       } finally {
         setIsLoading(false);
       }
@@ -68,34 +82,58 @@ export function Exams() {
     fetchExams();
   }, []);
 
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("هل أنت متأكد من حذف هذا الامتحان؟")) return;
+    try {
+      const { error } = await supabase.from('exams').delete().eq('id', id);
+      if (error) throw error;
+      const { data } = await supabase.from('exams').select('*');
+      if (data) {
+        setExams(data);
+        const total = data.length;
+        const passed = data.filter(e => e.status === 'ناجح' || e.status === 'اجتاز').length;
+        const failed = total - passed;
+        let avgScore = 0;
+        if (total > 0) {
+           avgScore = Math.round(data.reduce((acc, curr) => acc + (curr.score || 0), 0) / total);
+        }
+        setStats({ total, passed, failed, avgScore: `${avgScore}%` });
+      }
+      alert("تم الحذف بنجاح");
+    } catch (err: any) {
+      console.error("Error deleting exam:", err);
+      alert("حدث خطأ أثناء الحذف: " + (err.message || ""));
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title=""
-          value="15"
+          value={stats.total.toString()}
           subtext="إجمالي الامتحانات"
           icon={FileText}
           colorClass="bg-primary-500 shadow-primary-500/20"
         />
         <StatCard
           title=""
-          value="10"
+          value={stats.passed.toString()}
           subtext="ناجحين"
           icon={CheckCircle}
           colorClass="bg-success-500 shadow-success-500/20"
         />
         <StatCard
           title=""
-          value="5"
+          value={stats.failed.toString()}
           subtext="راسبين"
           icon={XCircle}
           colorClass="bg-red-500 shadow-red-500/20"
         />
         <StatCard
           title=""
-          value="73%"
+          value={stats.avgScore}
           subtext="متوسط الدرجات"
           icon={BarChart2}
           colorClass="bg-warning-500 shadow-warning-500/20"
@@ -125,6 +163,7 @@ export function Exams() {
                 <th className="py-5 px-6 text-sm font-semibold text-text-body text-center">المدة</th>
                 <th className="py-5 px-6 text-sm font-semibold text-text-body">التاريخ</th>
                 <th className="py-5 px-6 text-sm font-semibold text-text-body">الحالة</th>
+                <th className="py-5 px-6 text-sm font-semibold text-text-body whitespace-nowrap">إجراءات</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-divide-card">
@@ -163,6 +202,15 @@ export function Exams() {
                     <span className={cn("px-3 py-1 text-xs font-medium border rounded-full whitespace-nowrap", exam.status_color)}>
                       {exam.status}
                     </span>
+                  </td>
+                  <td className="py-4 px-6">
+                    <button 
+                      onClick={() => handleDelete(exam.id)}
+                      className="p-2 text-text-muted hover:text-error-500 transition-colors bg-bg-main rounded-lg border border-border-card"
+                      title="حذف"
+                    >
+                      <XCircle className="w-4 h-4" />
+                    </button>
                   </td>
                 </tr>
               ))}

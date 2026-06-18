@@ -3,18 +3,18 @@ import { cn } from "../lib/utils";
 import React, { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 
-export function Courses() {
+export function FreeCourses() {
   const [courses, setCourses] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [editCourse, setEditCourse] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newCourse, setNewCourse] = useState({ title: "", description: "", price: "", image_url: "", semester: "", features: [] as string[] });
+  const [newCourse, setNewCourse] = useState({ title: "", description: "", image_url: "", semester: "", features: [] as string[] });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function fetchCourses() {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.from('paycourses').select('*');
+      const { data, error } = await supabase.from('freecourses').select('*');
       if (error) throw error;
       if (data) {
         setCourses(data);
@@ -36,11 +36,10 @@ export function Courses() {
     setIsSubmitting(true);
     try {
       const { error } = await supabase
-        .from('paycourses')
+        .from('freecourses')
         .update({
           title: editCourse.title,
           description: editCourse.description,
-          price: editCourse.price,
           image_url: editCourse.image_url,
           semester: editCourse.semester,
         })
@@ -61,10 +60,9 @@ export function Courses() {
     if (!newCourse.title) return;
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.from('paycourses').insert([{
+      const { error } = await supabase.from('freecourses').insert([{
         title: newCourse.title,
         description: newCourse.description,
-        price: newCourse.price,
         image_url: newCourse.image_url,
         semester: newCourse.semester,
         features: newCourse.features
@@ -73,7 +71,7 @@ export function Courses() {
       if (error) throw error;
       
       setIsModalOpen(false);
-      setNewCourse({ title: "", description: "", price: "", image_url: "", semester: "", features: [] });
+      setNewCourse({ title: "", description: "", image_url: "", semester: "", features: [] });
       fetchCourses();
     } catch (error) {
       console.error("Error adding course:", error);
@@ -85,7 +83,7 @@ export function Courses() {
   const handleDelete = async (id: string) => {
     if (!window.confirm("هل أنت متأكد من حذف هذه الدورة؟")) return;
     try {
-      const { error } = await supabase.from('paycourses').delete().eq('id', id);
+      const { error } = await supabase.from('freecourses').delete().eq('id', id);
       if (error) throw error;
       fetchCourses();
       alert("تم الحذف بنجاح");
@@ -102,7 +100,7 @@ export function Courses() {
         <div className="relative w-full sm:w-96">
           <input
             type="text"
-            placeholder="البحث عن دورة مدفوعة..."
+            placeholder="البحث عن دورة مجانية..."
             className="w-full bg-bg-card border border-border-card rounded-xl py-3 pr-11 pl-4 text-text-title placeholder:text-text-muted focus:outline-none focus:border-primary-500/50 transition-colors"
           />
           <Search className="w-5 h-5 text-text-muted absolute right-4 top-1/2 -translate-y-1/2" />
@@ -169,8 +167,8 @@ export function Courses() {
               )}
 
               <div className="mt-auto pt-4 border-t border-border-card flex items-center justify-between">
-                <div className="flex items-center gap-1 text-primary-500 font-bold text-2xl">
-                   {course.price || "0"} <span className="text-sm font-normal">ج.م</span>
+                <div className="flex items-center gap-1 text-primary-500 font-bold text-xl">
+                   {course.price || "مجاناً"}
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -198,7 +196,7 @@ export function Courses() {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-bg-card border border-border-card rounded-2xl w-full max-w-lg overflow-hidden relative">
             <div className="p-6 border-b border-border-card flex items-center justify-between">
-              <h3 className="text-lg font-bold text-text-title">إنشاء دورة مدفوعة جديدة</h3>
+              <h3 className="text-lg font-bold text-text-title">إنشاء دورة مجانية جديدة</h3>
               <button 
                 onClick={() => setIsModalOpen(false)}
                 className="text-text-muted hover:text-text-title transition-colors p-1"
@@ -227,25 +225,14 @@ export function Courses() {
                    className="w-full bg-bg-main border border-border-card rounded-xl px-4 py-2 text-text-body focus:outline-none focus:border-primary-500 transition-colors"
                  />
                </div>
-               <div className="grid grid-cols-2 gap-4">
-                 <div>
-                   <label className="block text-sm font-medium text-text-body mb-1">السعر (ج.م)</label>
-                   <input 
-                     type="text"
-                     value={newCourse.price}
-                     onChange={e => setNewCourse({...newCourse, price: e.target.value})}
-                     className="w-full bg-bg-main border border-border-card rounded-xl px-4 py-2 text-text-body focus:outline-none focus:border-primary-500 transition-colors"
-                   />
-                 </div>
-                 <div>
-                   <label className="block text-sm font-medium text-text-body mb-1">الفصل الدراسي</label>
-                   <input 
-                     type="text"
-                     value={newCourse.semester}
-                     onChange={e => setNewCourse({...newCourse, semester: e.target.value})}
-                     className="w-full bg-bg-main border border-border-card rounded-xl px-4 py-2 text-text-body focus:outline-none focus:border-primary-500 transition-colors"
-                   />
-                 </div>
+               <div>
+                 <label className="block text-sm font-medium text-text-body mb-1">الفصل الدراسي</label>
+                 <input 
+                   type="text"
+                   value={newCourse.semester}
+                   onChange={e => setNewCourse({...newCourse, semester: e.target.value})}
+                   className="w-full bg-bg-main border border-border-card rounded-xl px-4 py-2 text-text-body focus:outline-none focus:border-primary-500 transition-colors"
+                 />
                </div>
                <div>
                  <label className="block text-sm font-medium text-text-body mb-1">رابط الصورة</label>
@@ -292,7 +279,7 @@ export function Courses() {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-bg-card border border-border-card rounded-2xl w-full max-w-lg overflow-hidden relative">
             <div className="p-6 border-b border-border-card flex items-center justify-between">
-              <h3 className="text-lg font-bold text-text-title">تعديل الدورة المدفوعة</h3>
+              <h3 className="text-lg font-bold text-text-title">تعديل الدورة المجانية</h3>
               <button 
                 onClick={() => setEditCourse(null)}
                 className="text-text-muted hover:text-text-title transition-colors p-1"
@@ -321,25 +308,14 @@ export function Courses() {
                    className="w-full bg-bg-main border border-border-card rounded-xl px-4 py-2 text-text-body focus:outline-none focus:border-primary-500 transition-colors"
                  />
                </div>
-               <div className="grid grid-cols-2 gap-4">
-                 <div>
-                   <label className="block text-sm font-medium text-text-body mb-1">السعر (ج.م)</label>
-                   <input 
-                     type="text"
-                     value={editCourse.price || ""}
-                     onChange={e => setEditCourse({...editCourse, price: e.target.value})}
-                     className="w-full bg-bg-main border border-border-card rounded-xl px-4 py-2 text-text-body focus:outline-none focus:border-primary-500 transition-colors"
-                   />
-                 </div>
-                 <div>
-                   <label className="block text-sm font-medium text-text-body mb-1">الفصل الدراسي</label>
-                   <input 
-                     type="text"
-                     value={editCourse.semester || ""}
-                     onChange={e => setEditCourse({...editCourse, semester: e.target.value})}
-                     className="w-full bg-bg-main border border-border-card rounded-xl px-4 py-2 text-text-body focus:outline-none focus:border-primary-500 transition-colors"
-                   />
-                 </div>
+               <div>
+                 <label className="block text-sm font-medium text-text-body mb-1">الفصل الدراسي</label>
+                 <input 
+                   type="text"
+                   value={editCourse.semester || ""}
+                   onChange={e => setEditCourse({...editCourse, semester: e.target.value})}
+                   className="w-full bg-bg-main border border-border-card rounded-xl px-4 py-2 text-text-body focus:outline-none focus:border-primary-500 transition-colors"
+                 />
                </div>
                <div>
                  <label className="block text-sm font-medium text-text-body mb-1">رابط الصورة</label>

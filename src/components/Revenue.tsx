@@ -52,20 +52,60 @@ const fallbackRevenueDetailsData = [
 export function Revenue() {
   const [revenueDetails, setRevenueDetails] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState({ totalRevenue: "0", activeSubscriptions: 0, refunds: "0", newStudents: 0 });
+  const [chartData, setChartData] = useState({ newStudents: newStudentsData, monthlyRevenue: monthlyRevenueData });
 
   useEffect(() => {
     async function fetchRevenueDetails() {
       try {
-        const { data, error } = await supabase.from('revenue_details').select('*');
-        if (error) throw error;
-        if (data && data.length > 0) {
-          setRevenueDetails(data);
-        } else {
-          setRevenueDetails(fallbackRevenueDetailsData);
+        const [{ data: revenueData, error: revenueError }, { data: subsData }] = await Promise.all([
+          supabase.from('revenue_details').select('*').order('id', { ascending: false }),
+          supabase.from('subscriptions').select('status')
+        ]);
+        
+        if (revenueError) throw revenueError;
+        if (revenueData) {
+          setRevenueDetails(revenueData);
+          
+          let totalRevenue = 0;
+          let totalRefunds = 0;
+          let totalNewStudents = 0;
+          
+          const dynamicNewStudentsData = [];
+           const dynamicMonthlyRevenueData = [];
+          
+          revenueData.forEach(item => {
+             const revValue = parseFloat(item.net_revenue?.replace(/,/g, '') || '0');
+             const refundValue = Math.abs(parseFloat(item.refunds?.replace(/,/g, '') || '0'));
+             
+             totalRevenue += revValue;
+             totalRefunds += refundValue;
+             totalNewStudents += item.new_students || 0;
+             
+             dynamicNewStudentsData.push({ name: item.month, value: item.new_students });
+             dynamicMonthlyRevenueData.push({ 
+                name: item.month, 
+                value: revValue, 
+                label: revValue >= 1000 ? (revValue / 1000).toFixed(1) + 'K' : revValue.toString() 
+             });
+          });
+          
+          if (dynamicNewStudentsData.length > 0) {
+             setChartData({
+               newStudents: dynamicNewStudentsData.slice(0, 6).reverse(),
+               monthlyRevenue: dynamicMonthlyRevenueData.slice(0, 6).reverse()
+             });
+          }
+          
+          setStats({
+            totalRevenue: totalRevenue >= 1000 ? (totalRevenue / 1000).toFixed(1) + 'K' : totalRevenue.toString(),
+            activeSubscriptions: subsData ? subsData.filter(s => s.status === 'نشط').length : 0,
+            refunds: totalRefunds >= 1000 ? (totalRefunds / 1000).toFixed(1) + 'K' : totalRefunds.toString(),
+            newStudents: totalNewStudents
+          });
         }
       } catch (err) {
         console.error("Error fetching revenue details:", err);
-        setRevenueDetails(fallbackRevenueDetailsData);
       } finally {
         setIsLoading(false);
       }
@@ -80,28 +120,28 @@ export function Revenue() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title=""
-          value="120.4K"
+          value={stats.totalRevenue}
           subtext="إجمالي الإيرادات"
           icon={DollarSign}
           colorClass="bg-success-500 shadow-success-500/20"
         />
         <StatCard
           title=""
-          value="50"
+          value={stats.activeSubscriptions.toString()}
           subtext="اشتراكات نشطة"
           icon={CreditCard}
           colorClass="bg-primary-500 shadow-primary-500/20"
         />
         <StatCard
           title=""
-          value="3.2K"
+          value={stats.refunds}
           subtext="المبالغ المستردة"
           icon={RefreshCcw}
           colorClass="bg-red-500 shadow-red-500/20"
         />
         <StatCard
           title=""
-          value="73"
+          value={stats.newStudents.toString()}
           subtext="طلاب جدد"
           icon={UserPlus}
           colorClass="bg-info-500 shadow-info-500/20"
@@ -114,7 +154,7 @@ export function Revenue() {
           <h3 className="text-xl font-bold text-text-title mb-6">الطلاب الجدد</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={newStudentsData} margin={{ top: 20, right: 0, left: 0, bottom: 0 }}>
+              <BarChart data={chartData.newStudents} margin={{ top: 20, right: 0, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--chart-grid)" />
                 <XAxis 
                   dataKey="name" 
@@ -134,7 +174,7 @@ export function Revenue() {
                   fillOpacity={1}
                 >
                   {
-                    newStudentsData.map((entry, index) => (
+                    chartData.newStudents.map((entry, index) => (
                       <cell key={`cell-${index}`} fill="url(#colorStudent)" />
                     ))
                   }
@@ -155,7 +195,7 @@ export function Revenue() {
           <h3 className="text-xl font-bold text-text-title mb-6">الإيرادات الشهرية</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthlyRevenueData} margin={{ top: 20, right: 0, left: 0, bottom: 0 }}>
+              <BarChart data={chartData.monthlyRevenue} margin={{ top: 20, right: 0, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--chart-grid)" />
                 <XAxis 
                   dataKey="name" 

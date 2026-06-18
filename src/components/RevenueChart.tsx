@@ -1,6 +1,8 @@
+import { useState, useEffect } from "react";
 import { BarChart, Bar, XAxis, CartesianGrid, ResponsiveContainer, Tooltip } from "recharts";
+import { supabase } from "../lib/supabase";
 
-const data = [
+const fallbackData = [
   { name: "يونيو", value: 24.7 },
   { name: "مايو", value: 16.2 },
   { name: "أبريل", value: 16.6 },
@@ -22,6 +24,29 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export function RevenueChart() {
+  const [data, setData] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function fetchRevenue() {
+      const { data: revenueData, error } = await supabase.from('revenue_details').select('*');
+      
+      if (!error && revenueData && revenueData.length > 0) {
+        const formattedData = revenueData.map(item => {
+          const val = parseFloat(item.net_revenue?.replace(/,/g, '') || '0');
+          return {
+            name: item.month,
+            value: val >= 1000 ? parseFloat((val / 1000).toFixed(1)) : val
+          };
+        });
+        setData(formattedData);
+      } else {
+        setData(fallbackData);
+      }
+    }
+
+    fetchRevenue();
+  }, []);
+
   return (
     <div className="bg-bg-card rounded-3xl p-6 border border-border-card h-full min-h-[400px] flex flex-col">
       <h3 className="text-xl font-bold text-text-title mb-6">الإيرادات الشهرية</h3>

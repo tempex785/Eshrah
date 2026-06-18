@@ -7,19 +7,49 @@ CREATE TABLE IF NOT EXISTS public.admins (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-INSERT INTO public.admins (email) VALUES ('admin@academy.com') ON CONFLICT (email) DO NOTHING;
+INSERT INTO public.admins (email) VALUES 
+('admin@academy.com'),
+('tempex785@gmail.com')
+ON CONFLICT (email) DO NOTHING;
 
 -- 1. Students Table
 CREATE TABLE IF NOT EXISTS public.students (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    name TEXT NOT NULL,
-    email TEXT,
-    phone TEXT,
-    date TEXT,
-    progress NUMERIC,
-    status TEXT,
-    initial TEXT
+  id uuid references auth.users not null primary key,
+  first_name text,
+  last_name text,
+  phone text unique,
+  parent_phone text,
+  gender text,
+  governorate text,
+  college_name text,
+  academic_year text,
+  address_detailed text,
+  how_did_you_know text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
+
+-- Set up Row Level Security (RLS)
+alter table public.students enable row level security;
+
+-- Create policies
+create policy "Users can view their own profile."
+  on public.students for select
+  using ( auth.uid() = id );
+
+create policy "Users can update their own profile."
+  on public.students for update
+  using ( auth.uid() = id );
+
+-- Create a policy allowing authenticated users to insert their profile upon registration
+create policy "Users can insert their own profile."
+  on public.students for insert
+  with check ( auth.uid() = id );
+
+-- Allow admins to view all profiles
+create policy "Admins can view all profiles."
+  on public.students for select
+  using ( exists (select 1 from public.admins where email = (select email from auth.users where id = auth.uid())) );
+
 
 -- 2. Courses Table
 CREATE TABLE IF NOT EXISTS public.courses (
@@ -92,12 +122,6 @@ INSERT INTO public.revenue_details (month, year, subscriptions, refunds, net_rev
 ('يناير', '2024', '23,124', '-1,013', '22,111', 19),
 ('فبراير', '2024', '20,102', '-594', '19,508', 11),
 ('مارس', '2024', '22,008', '-716', '21,292', 14);
-INSERT INTO public.students (name, email, phone, date, progress, status, initial) VALUES
-('أحمد محمد علي', 'student1@academy.com', '0574035495', '2026/1/9', 35, 'نشط', 'أ'),
-('فاطمة حسن إبراهيم', 'student2@academy.com', '0579127893', '2026/5/16', 91, 'نشط', 'ف'),
-('محمد عبدالله السيد', 'student3@academy.com', '0573229813', '2026/4/5', 82, 'نشط', 'م'),
-('نورة سعيد الحربي', 'student4@academy.com', '0552744379', '2026/3/10', 25, 'نشط', 'ن'),
-('عبدالله سالم الشمري', 'student5@academy.com', '0538561278', '2026/2/8', 58, 'نشط', 'ع');
 
 INSERT INTO public.courses (title, category, gradient, description, instructor, rating, duration, lessons, students, price) VALUES
 ('دورة التسويق الرقمي', 'تسويق', 'bg-gradient-to-br from-cyan-600 to-blue-900', 'احترف التسويق عبر منصات التواصل الاجتماعي وإعلانات جوجل', 'د. نورة السعيد', 4.7, '35 ساعة', 10, 189, 699),
@@ -118,3 +142,128 @@ INSERT INTO public.certificates (student, course, date, grade, grade_color, acti
 ('أحمد محمد علي', 'دورة البرمجة للمبتدئين', '2026/4/3', 'ممتاز', 'text-success-500 bg-success-500/10', true),
 ('فاطمة حسن إبراهيم', 'دورة التصوير الفوتوغرافي', '2026/6/11', 'جيد جداً', 'text-warning-500 bg-warning-500/10', false),
 ('محمد عبدالله السيد', 'دورة إدارة المشاريع', '2026/4/2', 'جيد', 'text-info-500 bg-info-500/10', false);
+
+-- 7. Row Level Security (RLS) setup
+-- 8. Top Students Table
+CREATE TABLE IF NOT EXISTS public.top_students (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    name TEXT NOT NULL,
+    address TEXT,
+    emoji TEXT,
+    score NUMERIC,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- RLS Policies For Top Students
+ALTER TABLE public.top_students ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admins have full access to top students" ON public.top_students FOR ALL TO authenticated USING (public.is_admin());
+
+-- 9. Pay Courses Table
+CREATE TABLE IF NOT EXISTS public.paycourses (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title TEXT NOT NULL,
+    description TEXT,
+    price TEXT,
+    image_url TEXT,
+    semester TEXT,
+    features JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+INSERT INTO public.paycourses (title, description, price, image_url, semester, features)
+VALUES 
+('كورس المناعة', 'شرح المناعة بالتفصيل', '250', 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?q=80&w=800&auto=format&fit=crop', 'Semester 1', '["شرح وافي ومبسط لكل دروس الباب.", "ملزمة pdf لكل درس تحتوي على كل التفاصيل.", "بنك أسئلة مجاب عنه لتطبيق ما درسته."]'),
+('كورس الهرمونات', 'شرح الهرمونات', '200', 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?q=80&w=800&auto=format&fit=crop', 'Semester 1', '["شرح شامل لتنظيم الهرمونات في جسم الإنسان.", "مذكرة مراجعة نهائية لكل فصل.", "أسئلة تفاعلية بعد كل فيديو."]');
+
+-- 10. Free Courses Table
+CREATE TABLE IF NOT EXISTS public.freecourses (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title TEXT NOT NULL,
+    description TEXT,
+    image_url TEXT,
+    semester TEXT NOT NULL,
+    features TEXT[],
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+INSERT INTO public.freecourses (title, description, image_url, semester, features)
+VALUES 
+('كورس التكاثر المجاني', 'مقدمة في التكاثر', 'https://images.unsplash.com/photo-1549643276-fbc2d8ce01df?q=80&w=800&auto=format&fit=crop', 'Semester 2', '{"شرح مبسط ومجاني", "أسئلة محلولة", "خطة مذاكرة"}');
+
+-- 11. Study Levels Table
+CREATE TABLE IF NOT EXISTS public.study_levels (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    image_url TEXT,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+INSERT INTO public.study_levels (name, image_url, description) VALUES 
+('Semester 1', 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?q=80&w=800&auto=format&fit=crop', 'معلومات تفصيلية عن المرحلة الأولى'),
+('Semester 2', 'https://images.unsplash.com/photo-1559757175-5700dde675bc?q=80&w=800&auto=format&fit=crop', 'معلومات تفصيلية عن المرحلة الثانية'),
+('Semester 3', 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?q=80&w=800&auto=format&fit=crop', 'معلومات تفصيلية عن المرحلة الثالثة'),
+('Semester 4', 'https://images.unsplash.com/photo-1631549916768-4119b2e5f926?q=80&w=800&auto=format&fit=crop', 'معلومات تفصيلية عن المرحلة الرابعة'),
+('Semester 5', 'https://images.unsplash.com/photo-1581594693702-fbdc51b2763b?q=80&w=800&auto=format&fit=crop', 'معلومات تفصيلية عن المرحلة الخامسة');
+
+-- ENABLE RLS on all tables
+ALTER TABLE public.study_levels ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.freecourses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.paycourses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.admins ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE public.students ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.courses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.exams ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.certificates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.revenue_details ENABLE ROW LEVEL SECURITY;
+
+-- Helper Function to Check Admin Status
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean
+LANGUAGE sql STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.admins WHERE email = (auth.jwt() ->> 'email')::text
+  );
+$$;
+
+-- RLS Policies For Admins
+-- Add policy to allow admins to read all admins (or themselves)
+-- Without recursion because function is SECURITY DEFINER
+CREATE POLICY "Admins can view admins" ON public.admins FOR SELECT TO authenticated USING (public.is_admin() OR email = (auth.jwt() ->> 'email')::text);
+CREATE POLICY "Admins can update admins" ON public.admins FOR UPDATE TO authenticated USING (public.is_admin());
+CREATE POLICY "Admins can delete admins" ON public.admins FOR DELETE TO authenticated USING (public.is_admin());
+CREATE POLICY "Admins can insert admins" ON public.admins FOR INSERT TO authenticated WITH CHECK (public.is_admin());
+
+-- RLS Policies For Students
+CREATE POLICY "Admins have full access to students" ON public.students FOR ALL TO authenticated USING (public.is_admin());
+
+-- RLS Policies For Courses
+CREATE POLICY "Admins have full access to courses" ON public.courses FOR ALL TO authenticated USING (public.is_admin());
+
+-- RLS Policies For Subscriptions
+CREATE POLICY "Admins have full access to subscriptions" ON public.subscriptions FOR ALL TO authenticated USING (public.is_admin());
+
+-- RLS Policies For Exams
+CREATE POLICY "Admins have full access to exams" ON public.exams FOR ALL TO authenticated USING (public.is_admin());
+
+-- RLS Policies For Certificates
+CREATE POLICY "Admins have full access to certificates" ON public.certificates FOR ALL TO authenticated USING (public.is_admin());
+
+-- RLS Policies For Paycourses
+CREATE POLICY "Admins have full access to paycourses" ON public.paycourses FOR ALL TO authenticated USING (public.is_admin());
+
+-- RLS Policies For Freecourses
+CREATE POLICY "Admins have full access to freecourses" ON public.freecourses FOR ALL TO authenticated USING (public.is_admin());
+CREATE POLICY "Allow public read access to freecourses" ON public.freecourses FOR SELECT USING (true);
+
+-- RLS Policies For Study Levels
+CREATE POLICY "Admins have full access to study_levels" ON public.study_levels FOR ALL TO authenticated USING (public.is_admin());
+CREATE POLICY "Allow public read access to study_levels" ON public.study_levels FOR SELECT USING (true);
+
+-- RLS Policies For Revenue Details
+CREATE POLICY "Admins have full access to revenue details" ON public.revenue_details FOR ALL TO authenticated USING (public.is_admin());

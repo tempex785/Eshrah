@@ -1,4 +1,4 @@
-import { CreditCard, CheckCircle, Clock, DollarSign, Plus } from "lucide-react";
+import { CreditCard, CheckCircle, Clock, DollarSign, Plus, Trash2 } from "lucide-react";
 import { StatCard } from "./StatCard";
 import { cn } from "../lib/utils";
 import { useState, useEffect } from "react";
@@ -52,27 +52,58 @@ const fallbackSubscriptionsData = [
 export function Subscriptions() {
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState({ total: 0, active: 0, annual: 0, revenue: "0" });
+
+  async function fetchSubscriptions() {
+    try {
+      const [{ data: subsData, error: subsError }, { data: revenueData }] = await Promise.all([
+        supabase.from('subscriptions').select('*'),
+        supabase.from('revenue_details').select('*')
+      ]);
+      
+      if (subsError) throw subsError;
+      
+      if (subsData) {
+        setSubscriptions(subsData);
+        
+        let totalRevenue = 0;
+        if (revenueData) {
+          totalRevenue = revenueData.reduce((sum, item) => {
+            const val = parseFloat(item.net_revenue?.replace(/,/g, '') || '0');
+            return sum + val;
+          }, 0);
+        }
+        
+        setStats({
+          total: subsData.length,
+          active: subsData.filter(s => s.status === 'نشط').length,
+          annual: subsData.filter(s => s.plan === 'سنوي').length,
+          revenue: totalRevenue >= 1000 ? (totalRevenue / 1000).toFixed(1) + 'K' : totalRevenue.toString()
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching subscriptions:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   useEffect(() => {
-    async function fetchSubscriptions() {
-      try {
-        const { data, error } = await supabase.from('subscriptions').select('*');
-        if (error) throw error;
-        if (data && data.length > 0) {
-          setSubscriptions(data);
-        } else {
-          setSubscriptions(fallbackSubscriptionsData);
-        }
-      } catch (err) {
-        console.error("Error fetching subscriptions:", err);
-        setSubscriptions(fallbackSubscriptionsData);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
     fetchSubscriptions();
   }, []);
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("هل أنت متأكد من حذف هذا الاشتراك؟")) return;
+    try {
+      const { error } = await supabase.from('subscriptions').delete().eq('id', id);
+      if (error) throw error;
+      fetchSubscriptions();
+      alert("تم الحذف بنجاح");
+    } catch (err) {
+      console.error("Error deleting subscription:", err);
+      alert("حدث خطأ أثناء الحذف");
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -80,28 +111,28 @@ export function Subscriptions() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title=""
-          value="60"
+          value={stats.total.toString()}
           subtext="إجمالي الاشتراكات"
           icon={CreditCard}
           colorClass="bg-primary-500 shadow-primary-500/20"
         />
         <StatCard
           title=""
-          value="50"
+          value={stats.active.toString()}
           subtext="اشتراكات نشطة"
           icon={CheckCircle}
           colorClass="bg-success-500 shadow-success-500/20"
         />
         <StatCard
           title=""
-          value="20"
+          value={stats.annual.toString()}
           subtext="اشتراكات سنوية"
           icon={Clock}
           colorClass="bg-warning-500 shadow-warning-500/20"
         />
         <StatCard
           title=""
-          value="43.2K"
+          value={stats.revenue}
           subtext="إجمالي الإيرادات"
           icon={DollarSign}
           colorClass="bg-info-500 shadow-info-500/20"
@@ -132,6 +163,7 @@ export function Subscriptions() {
                 <th className="py-5 px-6 text-sm font-semibold text-text-body w-32">التقدم</th>
                 <th className="py-5 px-6 text-sm font-semibold text-text-body">المبلغ</th>
                 <th className="py-5 px-6 text-sm font-semibold text-text-body">الحالة</th>
+                <th className="py-5 px-6 text-sm font-semibold text-text-body whitespace-nowrap">إجراءات</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-divide-card">
@@ -169,6 +201,15 @@ export function Subscriptions() {
                     <span className={cn("px-3 py-1 text-xs font-medium border rounded-full whitespace-nowrap", sub.status_color)}>
                       {sub.status}
                     </span>
+                  </td>
+                  <td className="py-4 px-6">
+                    <button 
+                      onClick={() => handleDelete(sub.id)}
+                      className="hover:text-error-500 transition-colors p-2 text-text-muted bg-bg-main border border-border-card rounded-lg"
+                      title="حذف الاشتراك"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </td>
                 </tr>
               ))}

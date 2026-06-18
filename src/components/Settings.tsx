@@ -79,7 +79,7 @@ export function Settings() {
           </div>
           <div className="p-5 bg-bg-hover border border-border-card rounded-2xl flex flex-col items-end gap-1">
             <span className="text-text-muted text-sm">قاعدة البيانات</span>
-            <span className="text-text-title font-bold text-lg">Convex</span>
+            <span className="text-text-title font-bold text-lg">Supabase</span>
           </div>
           <div className="p-5 bg-bg-hover border border-border-card rounded-2xl flex flex-col items-end gap-1">
             <span className="text-text-muted text-sm">اللغة</span>

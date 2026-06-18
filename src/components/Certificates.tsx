@@ -1,7 +1,7 @@
-import { ShieldCheck, Sparkles, Award } from "lucide-react";
+import { ShieldCheck, Sparkles, Award, XCircle } from "lucide-react";
 import { StatCard } from "./StatCard";
 import { cn } from "../lib/utils";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 
 const fallbackCertificatesData = [
@@ -37,20 +37,24 @@ const fallbackCertificatesData = [
 export function Certificates() {
   const [certificates, setCertificates] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState({ total: 0, excellent: 0, verifyRate: "100%" });
 
   useEffect(() => {
     async function fetchCertificates() {
       try {
         const { data, error } = await supabase.from('certificates').select('*');
         if (error) throw error;
-        if (data && data.length > 0) {
+        if (data) {
           setCertificates(data);
-        } else {
-          setCertificates(fallbackCertificatesData);
+          
+          setStats({
+            total: data.length,
+            excellent: data.filter(c => c.grade === 'ممتاز').length,
+            verifyRate: "100%" // Hardcoded or calculated later
+          });
         }
       } catch (err) {
         console.error("Error fetching certificates:", err);
-        setCertificates(fallbackCertificatesData);
       } finally {
         setIsLoading(false);
       }
@@ -59,27 +63,47 @@ export function Certificates() {
     fetchCertificates();
   }, []);
 
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!window.confirm("هل أنت متأكد من حذف هذه الشهادة؟")) return;
+    try {
+      const { error } = await supabase.from('certificates').delete().eq('id', id);
+      if (error) throw error;
+      const { data } = await supabase.from('certificates').select('*');
+      if (data) {
+         setCertificates(data);
+         const total = data.length;
+         const highlyRated = data.filter(c => ['امتياز', 'ممتاز', 'جيد جداً', 'A+', 'A'].includes(c.grade)).length;
+         setStats((prev) => ({ ...prev, total, excellent: highlyRated }));
+      }
+      alert("تم الحذف بنجاح");
+    } catch (err: any) {
+      console.error("Error deleting certificate:", err);
+      alert("حدث خطأ أثناء الحذف: " + (err.message || ""));
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatCard
           title=""
-          value="10"
+          value={stats.total.toString()}
           subtext="شهادات صادرة"
           icon={Award}
           colorClass="bg-primary-500 shadow-primary-500/20"
         />
         <StatCard
           title=""
-          value="3"
+          value={stats.excellent.toString()}
           subtext="تقدير ممتاز"
           icon={Sparkles}
           colorClass="bg-warning-500 shadow-warning-500/20"
         />
         <StatCard
           title=""
-          value="100%"
+          value={stats.verifyRate}
           subtext="معدل التحقق"
           icon={ShieldCheck}
           colorClass="bg-success-500 shadow-success-500/20"
@@ -111,8 +135,17 @@ export function Certificates() {
                     <div className="w-14 h-14 rounded-xl bg-warning-500 flex items-center justify-center shrink-0 shadow-lg shadow-warning-500/20">
                       <Award className="w-7 h-7 text-text-title" />
                     </div>
-                    <div>
-                      <h4 className="text-text-title font-semibold text-lg">{cert.student}</h4>
+                    <div className="flex-1 min-w-0 pr-4">
+                      <div className="flex items-center justify-between mb-1">
+                          <h4 className="text-text-title font-semibold text-lg whitespace-nowrap overflow-hidden text-ellipsis mr-2">{cert.student}</h4>
+                          <button 
+                            onClick={(e) => handleDelete(cert.id, e)}
+                            className="text-text-muted hover:text-error-500 transition-colors p-1"
+                            title="حذف الشهادة"
+                          >
+                            <XCircle className="w-4 h-4" />
+                          </button>
+                      </div>
                       <p className="text-text-muted text-sm mt-1">{cert.course}</p>
                       <p className="text-text-muted text-xs mt-1 font-mono">{cert.date}</p>
                     </div>
