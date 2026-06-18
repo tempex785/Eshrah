@@ -5,6 +5,7 @@ import { Header } from "./components/Header";
 import { Dashboard } from "./components/Dashboard";
 import { Students } from "./components/Students";
 import { Courses } from "./components/Courses";
+import { CourseContents } from "./components/CourseContents";
 import { FreeCourses } from "./components/FreeCourses";
 import { StudyLevels } from "./components/StudyLevels";
 import { Subscriptions } from "./components/Subscriptions";
@@ -108,6 +109,7 @@ export default function App() {
           {activeTab === "لوحة التحكم" && <Dashboard />}
           {activeTab === "الطلاب" && <Students />}
           {activeTab === "الدورات" && <Courses />}
+          {activeTab === "محتوى الدورات" && <CourseContents />}
           {activeTab === "الدورات المجانية" && <FreeCourses />}
           {activeTab === "المراحل الدراسية" && <StudyLevels />}
           {activeTab === "الاشتراكات" && <Subscriptions />}

@@ -93,15 +93,15 @@ export function Subscriptions() {
   }, []);
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("هل أنت متأكد من حذف هذا الاشتراك؟")) return;
+
     try {
       const { error } = await supabase.from('subscriptions').delete().eq('id', id);
       if (error) throw error;
       fetchSubscriptions();
-      alert("تم الحذف بنجاح");
+
     } catch (err) {
       console.error("Error deleting subscription:", err);
-      alert("حدث خطأ أثناء الحذف");
+
     }
   };
 

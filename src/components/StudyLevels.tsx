@@ -45,7 +45,7 @@ export function StudyLevels() {
       fetchLevels();
     } catch (err) {
       console.error("Error adding study level:", err);
-      alert("حدث خطأ أثناء إضافة المرحلة الدراسية");
+
     } finally {
       setIsSubmitting(false);
     }
@@ -69,14 +69,14 @@ export function StudyLevels() {
       fetchLevels();
     } catch (err) {
       console.error("Error updating study level:", err);
-      alert("حدث خطأ أثناء تحديث المرحلة الدراسية");
+
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("هل أنت متأكد من حذف هذه المرحلة؟")) return;
+
     try {
       const { data, error } = await supabase.from("study_levels").delete().eq("id", id).select();
       if (error) throw error;
@@ -84,10 +84,10 @@ export function StudyLevels() {
         throw new Error("لا توجد صلاحية أو أن العنصر غير موجود (مشكلة في سياسات الأمان RLS).");
       }
       fetchLevels();
-      alert("تم الحذف بنجاح");
+
     } catch (err: any) {
       console.error("Error deleting study level:", err);
-      alert("حدث خطأ أثناء حذف المرحلة الدراسية: " + (err.message || "تأكد من صلاحياتك في قاعدة البيانات"));
+
     }
   };
 

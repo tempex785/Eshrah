@@ -59,15 +59,15 @@ export function TopStudents() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("هل أنت متأكد من حذف هذا الطالب؟")) return;
+
     try {
       const { error } = await supabase.from('top_students').delete().eq('id', id);
       if (error) throw error;
-      alert("تم الحذف بنجاح");
+
       fetchTopStudents();
     } catch (err: any) {
       console.error("Error deleting student:", err);
-      alert("حدث خطأ أثناء الحذف: " + (err.message || ""));
+
     }
   };
 

@@ -83,15 +83,15 @@ export function Courses() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("هل أنت متأكد من حذف هذه الدورة؟")) return;
+
     try {
       const { error } = await supabase.from('paycourses').delete().eq('id', id);
       if (error) throw error;
       fetchCourses();
-      alert("تم الحذف بنجاح");
+
     } catch (err) {
       console.error("Error deleting course:", err);
-      alert("حدث خطأ أثناء الحذف");
+
     }
   };
 

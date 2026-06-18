@@ -21,6 +21,7 @@ const menuItems = [
   { icon: LayoutDashboard, label: "لوحة التحكم", active: true },
   { icon: Users, label: "الطلاب" },
   { icon: BookOpen, label: "الدورات" },
+  { icon: BookMarked, label: "محتوى الدورات" },
   { icon: Book, label: "الدورات المجانية" },
   { icon: GraduationCap, label: "المراحل الدراسية" },
   { icon: CreditCard, label: "الاشتراكات" },

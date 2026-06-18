@@ -83,7 +83,7 @@ export function Exams() {
   }, []);
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("هل أنت متأكد من حذف هذا الامتحان؟")) return;
+
     try {
       const { error } = await supabase.from('exams').delete().eq('id', id);
       if (error) throw error;
@@ -99,10 +99,10 @@ export function Exams() {
         }
         setStats({ total, passed, failed, avgScore: `${avgScore}%` });
       }
-      alert("تم الحذف بنجاح");
+
     } catch (err: any) {
       console.error("Error deleting exam:", err);
-      alert("حدث خطأ أثناء الحذف: " + (err.message || ""));
+
     }
   };
 

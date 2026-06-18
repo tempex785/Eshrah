@@ -65,7 +65,7 @@ export function Certificates() {
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!window.confirm("هل أنت متأكد من حذف هذه الشهادة؟")) return;
+
     try {
       const { error } = await supabase.from('certificates').delete().eq('id', id);
       if (error) throw error;
@@ -76,10 +76,10 @@ export function Certificates() {
          const highlyRated = data.filter(c => ['امتياز', 'ممتاز', 'جيد جداً', 'A+', 'A'].includes(c.grade)).length;
          setStats((prev) => ({ ...prev, total, excellent: highlyRated }));
       }
-      alert("تم الحذف بنجاح");
+
     } catch (err: any) {
       console.error("Error deleting certificate:", err);
-      alert("حدث خطأ أثناء الحذف: " + (err.message || ""));
+
     }
   };
 

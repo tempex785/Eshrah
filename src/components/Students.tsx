@@ -73,15 +73,15 @@ export function Students() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("هل أنت متأكد من حذف هذا الطالب؟")) return;
+
     try {
       const { error } = await supabase.from('students').delete().eq('id', id);
       if (error) throw error;
       fetchStudents();
-      alert("تم الحذف بنجاح");
+
     } catch (err) {
       console.error("Error deleting student:", err);
-      alert("حدث خطأ أثناء الحذف");
+
     }
   };
 

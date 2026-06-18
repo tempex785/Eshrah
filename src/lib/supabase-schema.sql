@@ -267,3 +267,32 @@ CREATE POLICY "Allow public read access to study_levels" ON public.study_levels 
 
 -- RLS Policies For Revenue Details
 CREATE POLICY "Admins have full access to revenue details" ON public.revenue_details FOR ALL TO authenticated USING (public.is_admin());
+
+-- 12. Course Subjects
+CREATE TABLE IF NOT EXISTS public.course_subjects (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  course_id UUID NOT NULL,
+  name TEXT NOT NULL,
+  icon_name TEXT DEFAULT 'FileText',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+ALTER TABLE public.course_subjects ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admins have full access to course_subjects" ON public.course_subjects FOR ALL TO authenticated USING (public.is_admin());
+CREATE POLICY "Allow public read access to course_subjects" ON public.course_subjects FOR SELECT USING (true);
+
+
+-- 13. Course Modules
+CREATE TABLE IF NOT EXISTS public.course_modules (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  subject_id UUID REFERENCES public.course_subjects(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  subtitle TEXT,
+  content TEXT,
+  items JSONB DEFAULT '[]'::JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+ALTER TABLE public.course_modules ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admins have full access to course_modules" ON public.course_modules FOR ALL TO authenticated USING (public.is_admin());
+CREATE POLICY "Allow public read access to course_modules" ON public.course_modules FOR SELECT USING (true);
