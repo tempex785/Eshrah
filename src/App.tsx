@@ -10,11 +10,13 @@ import { FreeCourses } from "./components/FreeCourses";
 import { StudyLevels } from "./components/StudyLevels";
 import { Subscriptions } from "./components/Subscriptions";
 import { Exams } from "./components/Exams";
+import { Homeworks } from "./components/Homeworks";
 import { Certificates } from "./components/Certificates";
 import { TopStudents } from "./components/TopStudents";
 import { Revenue } from "./components/Revenue";
 import { Settings } from "./components/Settings";
 import { Login } from "./components/Login";
+import Alerts from "./components/Alerts";
 import { Loader2 } from "lucide-react";
 
 export default function App() {
@@ -108,12 +110,14 @@ export default function App() {
           
           {activeTab === "لوحة التحكم" && <Dashboard />}
           {activeTab === "الطلاب" && <Students />}
+          {activeTab === "التنبيهات" && <Alerts />}
           {activeTab === "الدورات" && <Courses />}
           {activeTab === "محتوى الدورات" && <CourseContents />}
           {activeTab === "الدورات المجانية" && <FreeCourses />}
           {activeTab === "المراحل الدراسية" && <StudyLevels />}
           {activeTab === "الاشتراكات" && <Subscriptions />}
           {activeTab === "الامتحانات" && <Exams />}
+          {activeTab === "الواجبات" && <Homeworks />}
           {activeTab === "الشهادات" && <Certificates />}
           {activeTab === "أوائل الشهر" && <TopStudents />}
           {activeTab === "الإيرادات" && <Revenue />}

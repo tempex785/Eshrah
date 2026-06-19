@@ -12,7 +12,8 @@ import {
   BookMarked,
   LogOut,
   X,
-  Trophy
+  Trophy,
+  Bell
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { supabase } from "../lib/supabase";
@@ -20,12 +21,14 @@ import { supabase } from "../lib/supabase";
 const menuItems = [
   { icon: LayoutDashboard, label: "لوحة التحكم", active: true },
   { icon: Users, label: "الطلاب" },
+  { icon: Bell, label: "التنبيهات" },
   { icon: BookOpen, label: "الدورات" },
   { icon: BookMarked, label: "محتوى الدورات" },
   { icon: Book, label: "الدورات المجانية" },
   { icon: GraduationCap, label: "المراحل الدراسية" },
   { icon: CreditCard, label: "الاشتراكات" },
   { icon: FileText, label: "الامتحانات" },
+  { icon: FileText, label: "الواجبات" },
   { icon: Award, label: "الشهادات" },
   { icon: Trophy, label: "أوائل الشهر" },
   { icon: DollarSign, label: "الإيرادات" },

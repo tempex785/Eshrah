@@ -8,7 +8,7 @@ export function FreeCourses() {
   const [isLoading, setIsLoading] = useState(true);
   const [editCourse, setEditCourse] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newCourse, setNewCourse] = useState({ title: "", description: "", image_url: "", semester: "", features: [] as string[] });
+  const [newCourse, setNewCourse] = useState({ title: "", description: "", image_url: "", semester: "", features: [] as string[], end_date: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function fetchCourses() {
@@ -42,6 +42,8 @@ export function FreeCourses() {
           description: editCourse.description,
           image_url: editCourse.image_url,
           semester: editCourse.semester,
+          features: editCourse.features,
+          end_date: editCourse.end_date || null
         })
         .eq('id', editCourse.id);
 
@@ -65,13 +67,14 @@ export function FreeCourses() {
         description: newCourse.description,
         image_url: newCourse.image_url,
         semester: newCourse.semester,
-        features: newCourse.features
+        features: newCourse.features,
+        end_date: newCourse.end_date || null
       }]);
       
       if (error) throw error;
       
       setIsModalOpen(false);
-      setNewCourse({ title: "", description: "", image_url: "", semester: "", features: [] });
+      setNewCourse({ title: "", description: "", image_url: "", semester: "", features: [], end_date: "" });
       fetchCourses();
     } catch (error) {
       console.error("Error adding course:", error);
@@ -166,6 +169,23 @@ export function FreeCourses() {
                 </div>
               )}
 
+              {(course.created_at || course.end_date) && (
+                <div className="space-y-1 text-xs text-text-muted mt-2 border-t border-border-card pt-2">
+                  {course.created_at && (
+                    <div className="flex items-center gap-1">
+                      <span className="font-semibold text-text-body">تاريخ الإنشاء:</span>
+                      <span>{new Date(course.created_at).toLocaleDateString('ar-EG')}</span>
+                    </div>
+                  )}
+                  {course.end_date && (
+                    <div className="flex items-center gap-1 text-error-500">
+                      <span className="font-semibold">تاريخ الانتهاء:</span>
+                      <span>{new Date(course.end_date).toLocaleDateString('ar-EG')}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="mt-auto pt-4 border-t border-border-card flex items-center justify-between">
                 <div className="flex items-center gap-1 text-primary-500 font-bold text-xl">
                    {course.price || "مجاناً"}
@@ -253,6 +273,16 @@ export function FreeCourses() {
                    className="w-full bg-bg-main border border-border-card rounded-xl px-4 py-2 text-text-body focus:outline-none focus:border-primary-500 transition-colors"
                  />
                </div>
+               <div>
+                 <label className="block text-sm font-medium text-text-body mb-1">تاريخ الانتهاء (اختياري)</label>
+                 <input 
+                   type="datetime-local"
+                   value={newCourse.end_date}
+                   onChange={e => setNewCourse({...newCourse, end_date: e.target.value})}
+                   className="w-full bg-bg-main border border-border-card rounded-xl px-4 py-2 text-text-body focus:outline-none focus:border-primary-500 transition-colors"
+                   dir="ltr"
+                 />
+               </div>
                <div className="pt-4 border-t border-border-card flex gap-3">
                 <button
                   type="submit"
@@ -324,6 +354,25 @@ export function FreeCourses() {
                    value={editCourse.image_url || ""}
                    onChange={e => setEditCourse({...editCourse, image_url: e.target.value})}
                    className="w-full bg-bg-main border border-border-card rounded-xl px-4 py-2 text-text-body focus:outline-none focus:border-primary-500 transition-colors"
+                 />
+               </div>
+               <div>
+                 <label className="block text-sm font-medium text-text-body mb-1">المميزات (مفصولة بفاصلة)</label>
+                 <input 
+                   type="text"
+                   value={(editCourse.features || []).join(", ")}
+                   onChange={e => setEditCourse({...editCourse, features: e.target.value.split(",").map(f => f.trim()).filter(Boolean)})}
+                   className="w-full bg-bg-main border border-border-card rounded-xl px-4 py-2 text-text-body focus:outline-none focus:border-primary-500 transition-colors"
+                 />
+               </div>
+               <div>
+                 <label className="block text-sm font-medium text-text-body mb-1">تاريخ الانتهاء (اختياري)</label>
+                 <input 
+                   type="datetime-local"
+                   value={editCourse.end_date ? new Date(editCourse.end_date).toISOString().slice(0, 16) : ""}
+                   onChange={e => setEditCourse({...editCourse, end_date: e.target.value})}
+                   className="w-full bg-bg-main border border-border-card rounded-xl px-4 py-2 text-text-body focus:outline-none focus:border-primary-500 transition-colors"
+                   dir="ltr"
                  />
                </div>
                

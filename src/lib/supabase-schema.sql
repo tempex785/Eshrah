@@ -82,18 +82,19 @@ CREATE TABLE IF NOT EXISTS public.subscriptions (
     status_color TEXT
 );
 
--- 4. Exams Table
+-- 4. Exams Table (New Schema based on user request)
 CREATE TABLE IF NOT EXISTS public.exams (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    name TEXT NOT NULL,
-    initial TEXT,
-    course TEXT,
-    exam TEXT,
-    score NUMERIC,
-    duration TEXT,
-    date TEXT,
-    status TEXT,
-    status_color TEXT
+    course_id UUID, -- References paycourses or freecourses loosely
+    module_id UUID, -- Loosely references course_modules
+    type VARCHAR(50) DEFAULT 'exam', -- 'exam' or 'homework'
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    duration_minutes INTEGER NOT NULL DEFAULT 60,
+    total_marks INTEGER NOT NULL DEFAULT 100,
+    is_published BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- 5. Certificates Table
@@ -133,10 +134,7 @@ INSERT INTO public.subscriptions (name, initial, course, plan, plan_color, start
 ('ديما خالد الهاشمي', 'د', 'دورة تطوير تطبيقات الموبايل', 'ربع سنوي', 'text-warning-500 bg-warning-500/10 border-warning-500/20', '2026/3/26', '2026/6/24', 13, '1,499 ر.س', 'منتهي', 'text-red-500 bg-red-500/10 border-red-500/20'),
 ('نورة سعيد الحربي', 'ن', 'دورة تطوير تطبيقات الويب', 'سنوي', 'text-primary-500 bg-primary-500/10 border-primary-500/20', '2026/1/1', '2027/1/1', 85, '2,999 ر.س', 'نشط', 'text-success-500 bg-success-500/10 border-success-500/20');
 
-INSERT INTO public.exams (name, initial, course, exam, score, duration, date, status, status_color) VALUES
-('نايف سعود الأحمدي', 'ن', 'دورة البرمجة للمبتدئين', 'الاختبار النهائي - الوحدة الأولى', 79, '56 دقيقة', '2026/5/19', 'ناجح', 'text-success-500 bg-success-500/10 border-success-500/20'),
-('خالد عمر الشمري', 'خ', 'دورة تصميم الجرافيك', 'الاختبار النهائي - الوحدة الثانية', 78, '82 دقيقة', '2026/5/30', 'ناجح', 'text-success-500 bg-success-500/10 border-success-500/20'),
-('تركي عبدالله السبيعي', 'ت', 'دورة البرمجة للمبتدئين', 'الاختبار النهائي - الوحدة الثالثة', 98, '44 دقيقة', '2026/4/28', 'ناجح', 'text-success-500 bg-success-500/10 border-success-500/20');
+
 
 INSERT INTO public.certificates (student, course, date, grade, grade_color, active) VALUES
 ('أحمد محمد علي', 'دورة البرمجة للمبتدئين', '2026/4/3', 'ممتاز', 'text-success-500 bg-success-500/10', true),
@@ -167,7 +165,8 @@ CREATE TABLE IF NOT EXISTS public.paycourses (
     image_url TEXT,
     semester TEXT,
     features JSONB,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    end_date TIMESTAMP WITH TIME ZONE
 );
 
 INSERT INTO public.paycourses (title, description, price, image_url, semester, features)
@@ -183,7 +182,8 @@ CREATE TABLE IF NOT EXISTS public.freecourses (
     image_url TEXT,
     semester TEXT NOT NULL,
     features TEXT[],
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    end_date TIMESTAMP WITH TIME ZONE
 );
 
 INSERT INTO public.freecourses (title, description, image_url, semester, features)
@@ -200,11 +200,12 @@ CREATE TABLE IF NOT EXISTS public.study_levels (
 );
 
 INSERT INTO public.study_levels (name, image_url, description) VALUES 
-('Semester 1', 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?q=80&w=800&auto=format&fit=crop', 'معلومات تفصيلية عن المرحلة الأولى'),
-('Semester 2', 'https://images.unsplash.com/photo-1559757175-5700dde675bc?q=80&w=800&auto=format&fit=crop', 'معلومات تفصيلية عن المرحلة الثانية'),
-('Semester 3', 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?q=80&w=800&auto=format&fit=crop', 'معلومات تفصيلية عن المرحلة الثالثة'),
-('Semester 4', 'https://images.unsplash.com/photo-1631549916768-4119b2e5f926?q=80&w=800&auto=format&fit=crop', 'معلومات تفصيلية عن المرحلة الرابعة'),
-('Semester 5', 'https://images.unsplash.com/photo-1581594693702-fbdc51b2763b?q=80&w=800&auto=format&fit=crop', 'معلومات تفصيلية عن المرحلة الخامسة');
+('الفرقة الأولى', 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?q=80&w=800&auto=format&fit=crop', 'معلومات تفصيلية عن المرحلة الأولى'),
+('الفرقة الثانية', 'https://images.unsplash.com/photo-1559757175-5700dde675bc?q=80&w=800&auto=format&fit=crop', 'معلومات تفصيلية عن المرحلة الثانية'),
+('الفرقة الثالثة', 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?q=80&w=800&auto=format&fit=crop', 'معلومات تفصيلية عن المرحلة الثالثة'),
+('الفرقة الرابعة', 'https://images.unsplash.com/photo-1631549916768-4119b2e5f926?q=80&w=800&auto=format&fit=crop', 'معلومات تفصيلية عن المرحلة الرابعة'),
+('الفرقة الخامسة', 'https://images.unsplash.com/photo-1581594693702-fbdc51b2763b?q=80&w=800&auto=format&fit=crop', 'معلومات تفصيلية عن المرحلة الخامسة')
+ON CONFLICT (name) DO NOTHING;
 
 -- ENABLE RLS on all tables
 ALTER TABLE public.study_levels ENABLE ROW LEVEL SECURITY;
@@ -296,3 +297,243 @@ CREATE TABLE IF NOT EXISTS public.course_modules (
 ALTER TABLE public.course_modules ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admins have full access to course_modules" ON public.course_modules FOR ALL TO authenticated USING (public.is_admin());
 CREATE POLICY "Allow public read access to course_modules" ON public.course_modules FOR SELECT USING (true);
+
+
+-- 14. Course Assessments (Exams & Homeworks)
+CREATE TABLE IF NOT EXISTS public.questions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    exam_id UUID REFERENCES public.exams(id) ON DELETE CASCADE,
+    question_text TEXT NOT NULL,
+    image_url TEXT,
+    marks INTEGER DEFAULT 1,
+    order_index INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.options (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    question_id UUID REFERENCES public.questions(id) ON DELETE CASCADE,
+    option_text TEXT NOT NULL,
+    is_correct BOOLEAN DEFAULT false,
+    order_index INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS public.exam_attempts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL,
+    exam_id UUID REFERENCES public.exams(id) ON DELETE CASCADE,
+    status VARCHAR(50) DEFAULT 'in_progress', -- 'in_progress', 'completed'
+    started_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    completed_at TIMESTAMP WITH TIME ZONE,
+    score INTEGER DEFAULT 0,
+    UNIQUE(user_id, exam_id)
+);
+
+CREATE TABLE IF NOT EXISTS public.student_answers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    attempt_id UUID REFERENCES public.exam_attempts(id) ON DELETE CASCADE,
+    question_id UUID REFERENCES public.questions(id) ON DELETE CASCADE,
+    selected_option_id UUID REFERENCES public.options(id) ON DELETE SET NULL,
+    UNIQUE(attempt_id, question_id)
+);
+
+ALTER TABLE public.exams ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.questions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.options ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.exam_attempts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.student_answers ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Admins have full access to exams" ON public.exams FOR ALL TO authenticated USING (public.is_admin());
+CREATE POLICY "Admins have full access to questions" ON public.questions FOR ALL TO authenticated USING (public.is_admin());
+CREATE POLICY "Admins have full access to options" ON public.options FOR ALL TO authenticated USING (public.is_admin());
+CREATE POLICY "Admins have full access to exam_attempts" ON public.exam_attempts FOR ALL TO authenticated USING (public.is_admin());
+CREATE POLICY "Admins have full access to student_answers" ON public.student_answers FOR ALL TO authenticated USING (public.is_admin());
+
+CREATE POLICY "Allow public read access to exams" ON public.exams FOR SELECT USING (true);
+CREATE POLICY "Allow public read access to questions" ON public.questions FOR SELECT USING (true);
+CREATE POLICY "Allow public read access to options" ON public.options FOR SELECT USING (true);
+
+-- Student policies for attempts and answers
+CREATE POLICY "Users can view their own attempts" ON public.exam_attempts FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert their own attempts" ON public.exam_attempts FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update their own attempts" ON public.exam_attempts FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can see own answers" ON public.student_answers FOR SELECT USING (attempt_id IN (SELECT id FROM public.exam_attempts WHERE user_id = auth.uid()));
+CREATE POLICY "Users can insert own answers" ON public.student_answers FOR INSERT WITH CHECK (attempt_id IN (SELECT id FROM public.exam_attempts WHERE user_id = auth.uid()));
+CREATE POLICY "Users can update own answers" ON public.student_answers FOR UPDATE USING (attempt_id IN (SELECT id FROM public.exam_attempts WHERE user_id = auth.uid()));
+
+-- Reload PostgREST schema cache
+NOTIFY pgrst, 'reload schema';
+
+-- 15. Alerts Table
+CREATE TABLE IF NOT EXISTS public.alerts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    academic_year VARCHAR(255) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE public.alerts ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Admins have full access to alerts" ON public.alerts FOR ALL TO authenticated USING (public.is_admin());
+DROP POLICY IF EXISTS "Anyone can read active alerts" ON public.alerts;
+CREATE POLICY "Students can read their active alerts" ON public.alerts 
+FOR SELECT 
+USING (
+  is_active = true 
+  AND 
+  (
+    academic_year = 'General' 
+    OR 
+    academic_year = (SELECT academic_year FROM public.students WHERE id = auth.uid())
+  )
+);
+
+-- 16. Admin Notifications Table
+CREATE TABLE IF NOT EXISTS public.admin_notifications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    type VARCHAR(50) DEFAULT 'info',
+    is_read BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE public.admin_notifications ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admins have full access to admin_notifications" ON public.admin_notifications FOR ALL TO authenticated USING (public.is_admin());
+
+-- Database Triggers for Admin Notifications
+CREATE OR REPLACE FUNCTION public.create_admin_notification()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_TABLE_NAME = 'students' THEN
+        IF TG_OP = 'INSERT' THEN
+            INSERT INTO public.admin_notifications (title, message, type)
+            VALUES ('تسجيل طالب جديد', 'تم تسجيل طالب جديد: ' || NEW.name, 'success');
+        END IF;
+    ELSIF TG_TABLE_NAME = 'subscriptions' THEN
+        IF TG_OP = 'INSERT' THEN
+            INSERT INTO public.admin_notifications (title, message, type)
+            VALUES ('اشتراك جديد', 'تم تسجيل اشتراك جديد في دورة: ' || COALESCE(NEW.course, 'غير معروف'), 'info');
+        END IF;
+    ELSIF TG_TABLE_NAME = 'certificates' THEN
+        IF TG_OP = 'INSERT' THEN
+            INSERT INTO public.admin_notifications (title, message, type)
+            VALUES ('إصدار شهادة', 'تم إصدار شهادة للطالب: ' || COALESCE(NEW.student, 'غير معروف'), 'success');
+        END IF;
+    ELSIF TG_TABLE_NAME = 'exam_attempts' THEN
+        IF TG_OP = 'INSERT' THEN
+            INSERT INTO public.admin_notifications (title, message, type)
+            VALUES ('بدء اختبار', 'طالب بدأ محاولة اختبار جديدة', 'info');
+        ELSIF TG_OP = 'UPDATE' AND NEW.status = 'completed' AND OLD.status != 'completed' THEN
+            INSERT INTO public.admin_notifications (title, message, type)
+            VALUES ('إكمال اختبار', 'طالب أكمل اختبار بنتيجة: ' || COALESCE(NEW.score::text, '0'), 'success');
+        END IF;
+    ELSIF TG_TABLE_NAME = 'courses' THEN
+        IF TG_OP = 'INSERT' THEN
+            INSERT INTO public.admin_notifications (title, message, type)
+            VALUES ('دورة جديدة', 'تمت إضافة دورة جديدة: ' || NEW.name, 'success');
+        ELSIF TG_OP = 'UPDATE' THEN
+            INSERT INTO public.admin_notifications (title, message, type)
+            VALUES ('تحديث دورة', 'تم تحديث بيانات الدورة: ' || NEW.name, 'info');
+        ELSIF TG_OP = 'DELETE' THEN
+            INSERT INTO public.admin_notifications (title, message, type)
+            VALUES ('حذف دورة', 'تم حذف الدورة: ' || OLD.name, 'warning');
+            RETURN OLD;
+        END IF;
+    ELSIF TG_TABLE_NAME = 'exams' THEN
+        IF TG_OP = 'INSERT' THEN
+            INSERT INTO public.admin_notifications (title, message, type)
+            VALUES ('اختبار جديد', 'تمت إضافة اختبار جديد: ' || NEW.title, 'success');
+        ELSIF TG_OP = 'UPDATE' THEN
+            INSERT INTO public.admin_notifications (title, message, type)
+            VALUES ('تحديث اختبار', 'تم تحديث الاختبار: ' || NEW.title, 'info');
+        ELSIF TG_OP = 'DELETE' THEN
+            INSERT INTO public.admin_notifications (title, message, type)
+            VALUES ('حذف اختبار', 'تم حذف الاختبار: ' || OLD.title, 'warning');
+            RETURN OLD;
+        END IF;
+    ELSIF TG_TABLE_NAME = 'alerts' THEN
+        IF TG_OP = 'INSERT' THEN
+            INSERT INTO public.admin_notifications (title, message, type)
+            VALUES ('تنبيه جديد', 'تمت إضافة تنبيه جديد: ' || NEW.title, 'success');
+        ELSIF TG_OP = 'UPDATE' THEN
+            INSERT INTO public.admin_notifications (title, message, type)
+            VALUES ('تحديث تنبيه', 'تم تحديث التنبيه: ' || NEW.title, 'info');
+        ELSIF TG_OP = 'DELETE' THEN
+            INSERT INTO public.admin_notifications (title, message, type)
+            VALUES ('حذف تنبيه', 'تم حذف التنبيه: ' || OLD.title, 'warning');
+            RETURN OLD;
+        END IF;
+    ELSIF TG_TABLE_NAME = 'freecourses' THEN
+        IF TG_OP = 'INSERT' THEN
+            INSERT INTO public.admin_notifications (title, message, type)
+            VALUES ('دورة مجانية جديدة', 'تمت إضافة دورة مجانية جديدة: ' || NEW.name, 'success');
+        ELSIF TG_OP = 'DELETE' THEN
+            INSERT INTO public.admin_notifications (title, message, type)
+            VALUES ('حذف دورة مجانية', 'تم حذف الدورة المجانية: ' || OLD.name, 'warning');
+            RETURN OLD;
+        END IF;
+    ELSIF TG_TABLE_NAME = 'paycourses' THEN
+        IF TG_OP = 'INSERT' THEN
+            INSERT INTO public.admin_notifications (title, message, type)
+            VALUES ('دورة مدفوعة جديدة', 'تمت إضافة دورة مدفوعة جديدة: ' || NEW.name, 'success');
+        ELSIF TG_OP = 'DELETE' THEN
+            INSERT INTO public.admin_notifications (title, message, type)
+            VALUES ('حذف دورة مدفوعة', 'تم حذف الدورة المدفوعة: ' || OLD.name, 'warning');
+            RETURN OLD;
+        END IF;
+    END IF;
+    
+    RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Triggers
+DROP TRIGGER IF EXISTS on_student_added ON public.students;
+CREATE TRIGGER on_student_added
+    AFTER INSERT ON public.students
+    FOR EACH ROW EXECUTE FUNCTION public.create_admin_notification();
+    
+DROP TRIGGER IF EXISTS on_subscription_added ON public.subscriptions;
+CREATE TRIGGER on_subscription_added
+    AFTER INSERT ON public.subscriptions
+    FOR EACH ROW EXECUTE FUNCTION public.create_admin_notification();
+
+DROP TRIGGER IF EXISTS on_certificate_added ON public.certificates;
+CREATE TRIGGER on_certificate_added
+    AFTER INSERT ON public.certificates
+    FOR EACH ROW EXECUTE FUNCTION public.create_admin_notification();
+    
+DROP TRIGGER IF EXISTS on_exam_attempt_change ON public.exam_attempts;
+CREATE TRIGGER on_exam_attempt_change
+    AFTER INSERT OR UPDATE ON public.exam_attempts
+    FOR EACH ROW EXECUTE FUNCTION public.create_admin_notification();
+    
+DROP TRIGGER IF EXISTS on_courses_change ON public.courses;
+CREATE TRIGGER on_courses_change
+    AFTER INSERT OR UPDATE OR DELETE ON public.courses
+    FOR EACH ROW EXECUTE FUNCTION public.create_admin_notification();
+
+DROP TRIGGER IF EXISTS on_exams_change ON public.exams;
+CREATE TRIGGER on_exams_change
+    AFTER INSERT OR UPDATE OR DELETE ON public.exams
+    FOR EACH ROW EXECUTE FUNCTION public.create_admin_notification();
+
+DROP TRIGGER IF EXISTS on_alerts_change ON public.alerts;
+CREATE TRIGGER on_alerts_change
+    AFTER INSERT OR UPDATE OR DELETE ON public.alerts
+    FOR EACH ROW EXECUTE FUNCTION public.create_admin_notification();
+
+DROP TRIGGER IF EXISTS on_freecourses_change ON public.freecourses;
+CREATE TRIGGER on_freecourses_change
+    AFTER INSERT OR UPDATE OR DELETE ON public.freecourses
+    FOR EACH ROW EXECUTE FUNCTION public.create_admin_notification();
+
+DROP TRIGGER IF EXISTS on_paycourses_change ON public.paycourses;
+CREATE TRIGGER on_paycourses_change
+    AFTER INSERT OR UPDATE OR DELETE ON public.paycourses
+    FOR EACH ROW EXECUTE FUNCTION public.create_admin_notification();
+
